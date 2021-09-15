@@ -33,12 +33,12 @@ float trapeze_area(float x1, float x2){
 
 
 // calculate trapezes' area of a single thread
-void cal_trapezes_per_thread(float start, int trapezes_per_thread){
+void cal_trapezes(float start, int trapezes_number){
 
     float area = 0.0;
     float x1, x2;
 
-    for (int i = 0; i < trapezes_per_thread; i++){
+    for (int i = 0; i < trapezes_number; i++){
         x1 = start + i * trapeze_length;
         x2 = x1 + trapeze_length;
 
@@ -46,10 +46,12 @@ void cal_trapezes_per_thread(float start, int trapezes_per_thread){
         area += trapeze_area(x1,x2);
     }
     
-    // lock when adding to all_area 
-    mutex.lock();
-    all_area += area;
-    mutex.unlock();
+    // lock when adding to all_area
+    if(area > 0){
+        mutex.lock();
+        all_area += area;
+        mutex.unlock();
+    }
 }
 
 int main(int argc, char *argv[]){
@@ -83,25 +85,25 @@ int main(int argc, char *argv[]){
     }
     int trapezes_remainder = trapezes - trapezes_per_thread * (threads + 1);
     
-    int trapezes_current = trapezes_per_thread;   // number of trapezes for current thread to calculate
+    int trapezes_to_calc; // number of trapezes to calculate for a particular thread
     float start = 0;    // leftmost x coordinate for trapezes
+    
     // *** timing begins here ***
     auto start_time = std::chrono::system_clock::now();
     for (int i = 0; i < threads; i++){
 
         // the number of trapezes to calculate for thread i
         if(trapezes_remainder > 0){
-            trapezes_current++;
-            --trapezes_remainder;
+           trapezes_to_calc = trapezes_per_thread + 1;
+           --trapezes_remainder;
+        }else{
+            trapezes_to_calc = trapezes_per_thread;
         }
 
-        // create sub threads to execute func
-        ni[i] = std::thread(cal_trapezes_per_thread, start, trapezes_current);
+        ni[i] = std::thread(cal_trapezes, start, trapezes_to_calc);
 
         // coordinate for next thread
-        // mutex.lock();
-        start += trapezes_current * trapeze_length;
-        // mutex.unlock();
+        start += trapezes_to_calc * trapeze_length;
     }
 
     if(trapezes_remainder > 0){
@@ -109,7 +111,7 @@ int main(int argc, char *argv[]){
     }
 
     // at last, calculate the main thread
-    cal_trapezes_per_thread(start, trapezes_per_thread);
+    cal_trapezes(start, trapezes_per_thread);
 
 
     // main thread waits for all threads to finish
