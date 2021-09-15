@@ -1,11 +1,13 @@
-
 #include <iostream>
 #include <thread>
 #include <cstdlib>
 #include <cmath>
 #include <mutex>
+#include <chrono>
+
 
 std::mutex mutex;
+
 float trapeze_length; 
 float all_area = 0; // the total area of all threads calculated
 
@@ -22,11 +24,11 @@ float get_func_res(float x){
 }
 
 // calculate single trapeze_area
-void trapeze_area(float x1, float x2, float& area){
+float trapeze_area(float x1, float x2){
     float f_x1 = get_func_res(x1);
     float f_x2 = get_func_res(x2);
 
-    area += (f_x1 + f_x2) / 2 * std::abs(x2 - x1);
+    return (f_x1 + f_x2) / 2 * std::abs(x2 - x1);
 }
 
 
@@ -41,7 +43,7 @@ void cal_trapezes_per_thread(float start, int trapezes_per_thread){
         x2 = x1 + trapeze_length;
 
         // cal trapeze_area
-        trapeze_area(x1,x2,area);
+        area += trapeze_area(x1,x2);
     }
     
     // lock when adding to all_area 
@@ -63,34 +65,46 @@ int main(int argc, char *argv[]){
         threads = std::stoi(argv[1]) - 1;
         trapezes = std::stoi(argv[2]);
     } catch(std::exception) {
-        std::cout << "exception happens here" << std::endl;
-
         show_help_info(argv[0]);
     }
 
-    if (threads < 1 || trapezes < 1){
+    if (threads < 0 || trapezes < 1){
         show_help_info(argv[0]);
     }
+
+    // *** timing begins here ***
+    auto start_time = std::chrono::system_clock::now();
 
     // create threads to execute a range of data
     std::thread *ni = new std::thread[threads]; 
+
     trapeze_length = 1.0f / trapezes;
-    int trapezes_per_thread = trapezes / threads;
-    int trapezes_remainder = trapezes - trapezes_per_thread * threads;
+    int trapezes_per_thread;
+    if (threads == 0){
+        trapezes_per_thread = trapezes;
+    } else{
+        trapezes_per_thread = trapezes / (threads + 1);
+    }
+    int trapezes_remainder = trapezes - trapezes_per_thread * (threads + 1);
     
-    int trapezes_current;   // number of trapezes for current thread to calculate
+    int trapezes_current = trapezes_per_thread;   // number of trapezes for current thread to calculate
     float start = 0;    // leftmost x coordinate for trapezes
+
     for (int i = 0; i < threads; i++){
-        
+
         // the number of trapezes to calculate for thread i
         if(trapezes_remainder > 0){
-            trapezes_current = trapezes_per_thread + 1;
+            trapezes_current++;
             --trapezes_remainder;
         }
-        // 
+
+        // create sub threads to execute func
         ni[i] = std::thread(cal_trapezes_per_thread, start, trapezes_current);
+
         // coordinate for next thread
+        // mutex.lock();
         start += trapezes_current * trapeze_length;
+        // mutex.unlock();
     }
 
     if(trapezes_remainder > 0){
@@ -107,6 +121,11 @@ int main(int argc, char *argv[]){
     }
     std::cout << "The result of numberical intergration is: " << all_area << std::endl;
     delete[] ni;
+
+    // *** timing ends here ***
+    std::chrono::duration<double> duration =
+            (std::chrono::system_clock::now() - start_time);
+    std::cout << "Finished in " << duration.count() << " seconds (wall clock)." << std::endl;
 
     return 0;
 }
