@@ -71,10 +71,6 @@ int main(int argc, char *argv[]){
     if (threads < 0 || trapezes < 1){
         show_help_info(argv[0]);
     }
-
-    // *** timing begins here ***
-    auto start_time = std::chrono::system_clock::now();
-
     // create threads to execute a range of data
     std::thread *ni = new std::thread[threads]; 
 
@@ -89,7 +85,8 @@ int main(int argc, char *argv[]){
     
     int trapezes_current = trapezes_per_thread;   // number of trapezes for current thread to calculate
     float start = 0;    // leftmost x coordinate for trapezes
-
+    // *** timing begins here ***
+    auto start_time = std::chrono::system_clock::now();
     for (int i = 0; i < threads; i++){
 
         // the number of trapezes to calculate for thread i
