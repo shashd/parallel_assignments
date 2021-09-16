@@ -77,12 +77,7 @@ int main(int argc, char *argv[]){
     std::thread *ni = new std::thread[threads]; 
 
     trapeze_length = 1.0f / trapezes;
-    int trapezes_per_thread;
-    if (threads == 0){
-        trapezes_per_thread = trapezes;
-    } else{
-        trapezes_per_thread = trapezes / (threads + 1);
-    }
+    int trapezes_per_thread = trapezes / (threads + 1);
     int trapezes_remainder = trapezes - trapezes_per_thread * (threads + 1);
     
     int trapezes_to_calc; // number of trapezes to calculate for a particular thread
@@ -90,6 +85,7 @@ int main(int argc, char *argv[]){
     
     // *** timing begins here ***
     auto start_time = std::chrono::system_clock::now();
+    
     for (int i = 0; i < threads; i++){
 
         // the number of trapezes to calculate for thread i
@@ -112,7 +108,6 @@ int main(int argc, char *argv[]){
 
     // at last, calculate the main thread
     cal_trapezes(start, trapezes_per_thread);
-
 
     // main thread waits for all threads to finish
     for (int i = 0; i < threads; i++){
