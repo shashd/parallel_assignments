@@ -2,55 +2,71 @@
 #include <pthread.h>
 #include <vector>
 #include <cmath>
+#include <cstring>
+
+// marking the primes in this array, prime==true
+bool* flags;
+
+int sqrt_max;
 
 struct worker_info{
+    int id;	// thread identifier, just for debug
     int lowerbound;
     int upperbound;
-    std::vector<bool> *flag;
 };
 
 void show_help_info(char *program){
-    std::cout << "Usage: " << program << "M P" << std::endl;
-    std::cout << "M: the maximum positive interger (int, M > 1)"<< std::endl;
-    std::cout << "P: the number of threads (int, P > 0)"<< std::endl;
+    std::cout << "Usage: " << program << "T N" << std::endl;
+    std::cout << "T: the number of threads (int, T > 0)"<< std::endl;
+    std::cout << "N: the maximum positive interger (int, N >= 1)"<< std::endl;
     exit(1);
 }
 
 
 // todo: modify
 // at the end, the rest marked with true are primes
-void eratosthenes(int lowerbound, int upperbound, std::vector<bool> &flag) {
+void eratosthenes(int lowerbound, int upperbound) {
     for (int i = lowerbound; i * i <= upperbound; ++i) {
-        if (flag[i]) {
+        if (flags[i]) {
             for (int j = i * i; j <= upperbound; j += i){
-                flag[j] = false;
+                flags[j] = false;
             }
         }
-    }	
+    }
 }
 
-void *worker(void *arg){
-    // worker_info *wi = (static_cast<worker_info*>) arg;
-    
-    worker_info *wi = (struct worker_info *) arg;
-    eratosthenes(wi->lowerbound, wi->upperbound, *(wi->flag));
+void eratosthenes_worker(int lowerbound, int upperbound) {
+    for (int i = lowerbound; i <= upperbound; ++i) {
+        for(int q = 2; q <= sqrt_max; ++q){
+        	if(i % q == 0){
+        		flags[i] = false;
+        		break;
+        	}
+        }
+    }
+}
+
+void* worker(void *arg){
+    worker_info *wi = static_cast<worker_info*>(arg);
+
+    //std::cout << "Thread: " << wi->id << std::endl;
+
+    eratosthenes_worker(wi->lowerbound, wi->upperbound);
     return nullptr;
 }
 
 int main(int argc, char *argv[]) {
-
     if (argc != 3){
         show_help_info(argv[0]);
     }
 
     // load and check the params
-    int maximum;
     int threads;    
+    int maximum;
     try{
-        maximum = std::stoi(argv[1]);
-        
-        // the number of threads, main thread is excluded
-        threads = std::stoi(argv[2]) - 1;
+        // the number of threads, excluding main thread
+        threads = std::stoi(argv[1]) - 1;
+        maximum = std::stoi(argv[2]);
     } catch(std::exception) {
         show_help_info(argv[0]);
     }
@@ -59,42 +75,39 @@ int main(int argc, char *argv[]) {
         show_help_info(argv[0]);
     }
 
-    // init vector's size and value
-    std::vector<bool> flag(maximum + 1, true);
-    flag[0] = flag[1] = false; //exclude 0 and 1
-
+    flags = new bool[maximum + 1];
+    memset(flags, true, sizeof(bool) * (maximum + 1));
+    flags[0] = flags[1] = false; // exclude 0 and 1
 
     // sequentially compute primes up to sqrt_max
-    
-    int sqrt_max = (int) std::sqrt(maximum);    // round down
-    eratosthenes(2, sqrt_max, flag);
+    sqrt_max = (int) std::sqrt(maximum); // round down
+    eratosthenes(2, sqrt_max); 
 
     // multi-threads part
     int lower_bound = sqrt_max + 1;
     int upper_bound = maximum;
     int len = upper_bound - lower_bound + 1;
     int chunk_length = len / (threads + 1);
+    
     // todo: deal with chunk remainder
     int chunk_remainder = len - (threads + 1) * chunk_length;
-    
     // stores return value from pthread_create
     int rc;
-
     // create sub-threads identifier
     pthread_t et[threads];
-    //  
+    
     struct worker_info wi[threads];
-    int i;
-    for (i = 0; i < threads; i++){
-        std::cout << "Create thread " << i << std::endl;
-
-
-        // todo: calculate lowerbound and upperbound
-        // wi[i].lowerbound = lower_bound;
-        // wi[i].upperbound = lower_bound + chunk_length - 1;
-        // wi[i].flag = &flag;
-        wi[i] = { lower_bound, lower_bound + chunk_length - 1, &flag };
-        lower_bound += chunk_length;
+    for (int i = 0, cl; i < threads; i++){
+    
+    	if(chunk_remainder > 0){
+    		cl = chunk_length + 1;
+    		--chunk_remainder;
+    	}else{
+    		cl = chunk_length;
+    	}
+    
+        wi[i] = { i, lower_bound, lower_bound + cl - 1 };
+        lower_bound += cl;
 
         // create pthreads to execute tasks
         rc = pthread_create(&et[i], NULL, worker, (void *)&wi[i]);
@@ -106,19 +119,20 @@ int main(int argc, char *argv[]) {
     }
     
     // main thread execute
-    eratosthenes(lower_bound, maximum, flag);
+    eratosthenes_worker(lower_bound, maximum);
 
-    for(i = 0; i < threads; ++i)
+    for(int i = 0; i < threads; ++i)
         pthread_join(et[i], NULL);
-    
-    //pthread_exit(NULL);
 
     // output result 
+    std::cout << "Primes: ";
     for (int i = 0; i < maximum+1; i++){
-        if (flag[i]){
-            std::cout << i << " " ;
+        if (flags[i]){
+            std::cout << i << " ";
         }
     }
-
+    std::cout << std::endl;
+    
+    delete[] flags;
     return 0;
 }
