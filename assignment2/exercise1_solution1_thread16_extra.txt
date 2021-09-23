@@ -1,0 +1,6 @@
+The result of numberical intergration is: 3.30861
+Finished in 0.988447 seconds (wall clock).
+The result of numberical intergration is: 1.18464
+Finished in 9.9647 seconds (wall clock).
+The result of numberical intergration is: 0.125
+Finished in 99.2779 seconds (wall clock).
