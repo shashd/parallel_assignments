@@ -1,0 +1,8 @@
+The result of numerical intergration is: 3.14157
+Finished in 0.000378406 seconds (wall clock).
+The result of numerical intergration is: 3.1417
+Finished in 0.000673096 seconds (wall clock).
+The result of numerical intergration is: 3.16839
+Finished in 0.0292512 seconds (wall clock).
+The result of numerical intergration is: 1
+Finished in 2.43918 seconds (wall clock).
