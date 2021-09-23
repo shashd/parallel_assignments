@@ -5,7 +5,6 @@
 #include <mutex>
 #include <chrono>
 
-
 std::mutex mutex;
 
 float trapeze_length; 
@@ -52,6 +51,8 @@ void cal_trapezes(float start, int trapezes_number){
         all_area += area;
         mutex.unlock();
     }
+    
+    //std::cout <<"rightmost: " << x2 << std::endl;
 }
 
 int main(int argc, char *argv[]){
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < threads; i++){
         ni[i].join();
     }
-    std::cout << "The result of numberical intergration is: " << all_area << std::endl;
+    std::cout << "The result of numerical intergration is: " << all_area << std::endl;
     delete[] ni;
 
     // *** timing ends here ***
