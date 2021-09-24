@@ -80,14 +80,9 @@ int main(int argc, char *argv[]) {
     memset(flags, true, sizeof(bool) * (maximum + 1));
     flags[0] = flags[1] = false; // exclude 0 and 1
 
-    // *** timing begins here ***
-    auto start_time = std::chrono::system_clock::now();
-
-    // sequentially compute primes up to sqrt_max
     sqrt_max = (int) std::sqrt(maximum); // round down
-    eratosthenes(2, sqrt_max); 
 
-    // multi-threads part
+   	// multi-threads part
     int lower_bound = sqrt_max + 1;
     int upper_bound = maximum;
     int len = upper_bound - lower_bound + 1;
@@ -100,6 +95,11 @@ int main(int argc, char *argv[]) {
     pthread_t et[threads];
     
     struct worker_info wi[threads];
+
+    // *** timing begins here ***
+    auto start_time = std::chrono::system_clock::now();
+	// sequentially compute primes up to sqrt_max
+    eratosthenes(2, sqrt_max); 
     for (int i = 0, cl; i < threads; i++){
     
     	if(chunk_remainder > 0){
