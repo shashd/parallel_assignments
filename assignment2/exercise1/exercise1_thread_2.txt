@@ -6,3 +6,5 @@ The result of numerical intergration is: 3.16839
 Finished in 0.0292512 seconds (wall clock).
 The result of numerical intergration is: 1
 Finished in 2.43918 seconds (wall clock).
+The result of numerical intergration is: 3
+Finished in 0.000355066 seconds (wall clock).

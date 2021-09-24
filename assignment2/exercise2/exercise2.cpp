@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <cstring>
+#include <chrono>
 
 // marking the primes in this array, prime==true
 bool* flags;
@@ -38,7 +39,7 @@ void eratosthenes(int lowerbound, int upperbound) {
 void eratosthenes_worker(int lowerbound, int upperbound) {
     for (int i = lowerbound; i <= upperbound; ++i) {
         for(int q = 2; q <= sqrt_max; ++q){
-        	if(i % q == 0){
+        	if(flags[q] && i % q == 0){
         		flags[i] = false;
         		break;
         	}
@@ -79,6 +80,9 @@ int main(int argc, char *argv[]) {
     memset(flags, true, sizeof(bool) * (maximum + 1));
     flags[0] = flags[1] = false; // exclude 0 and 1
 
+    // *** timing begins here ***
+    auto start_time = std::chrono::system_clock::now();
+
     // sequentially compute primes up to sqrt_max
     sqrt_max = (int) std::sqrt(maximum); // round down
     eratosthenes(2, sqrt_max); 
@@ -89,7 +93,6 @@ int main(int argc, char *argv[]) {
     int len = upper_bound - lower_bound + 1;
     int chunk_length = len / (threads + 1);
     
-    // todo: deal with chunk remainder
     int chunk_remainder = len - (threads + 1) * chunk_length;
     // stores return value from pthread_create
     int rc;
@@ -124,14 +127,19 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < threads; ++i)
         pthread_join(et[i], NULL);
 
+	// *** timing ends here ***
+    std::chrono::duration<double> duration = std::chrono::system_clock::now() - start_time;
+
     // output result 
     std::cout << "Primes: ";
-    for (int i = 0; i < maximum+1; i++){
+    for (int i = 0, j = maximum + 1; i < j; i++){
         if (flags[i]){
             std::cout << i << " ";
         }
     }
     std::cout << std::endl;
+    
+    std::cout << "Finished in " << duration.count() << " seconds (wall clock)." << std::endl;
     
     delete[] flags;
     return 0;
