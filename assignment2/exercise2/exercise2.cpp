@@ -131,15 +131,15 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> duration = std::chrono::system_clock::now() - start_time;
 
     // output result 
-    std::cout << "Primes: ";
-    for (int i = 0, j = maximum + 1; i < j; i++){
-        if (flags[i]){
-            std::cout << i << " ";
-        }
-    }
-    std::cout << std::endl;
+    //std::cout << "Primes: ";
+    //for (int i = 0, j = maximum + 1; i < j; i++){
+    //    if (flags[i]){
+    //        std::cout << i << " ";
+    //    }
+    //}
+    //std::cout << std::endl;
     
-    std::cout << "Finished in " << duration.count() << " seconds (wall clock)." << std::endl;
+    std::cout << "T= " << threads + 1 << "N= " << maximum << " finished in " << duration.count() << " seconds (wall clock)." << std::endl;
     
     delete[] flags;
     return 0;

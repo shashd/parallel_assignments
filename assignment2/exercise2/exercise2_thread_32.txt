@@ -1,0 +1,3 @@
+T= 32N= 1000000 finished in 0.0633742 seconds (wall clock).
+T= 32N= 10000000 finished in 1.40424 seconds (wall clock).
+T= 32N= 100000000 finished in 35.9092 seconds (wall clock).

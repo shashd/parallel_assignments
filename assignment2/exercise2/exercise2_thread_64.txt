@@ -1,0 +1,3 @@
+T= 64N= 1000000 finished in 0.0543544 seconds (wall clock).
+T= 64N= 10000000 finished in 1.25966 seconds (wall clock).
+T= 64N= 100000000 finished in 33.051 seconds (wall clock).
