@@ -6,13 +6,17 @@
 
 #include "benchmark.hpp"
 
-// #ifdef COARSE
-// 	#include "sorted_list_coarse.hpp"
-// #else
-//#include "./backup/sorted_list_3.hpp"
-#include "sorted_list_3.hpp"
-
-// #endif
+#ifdef COARSE
+	#include "sorted_list_coarse.hpp"
+#elif defined FINE
+	#include "sorted_list_fine.hpp"
+#elif defined TATAS_COARSE
+	#include "sorted_list_tatas_coarse.hpp"
+#elif defined TATAS_FINE
+	#include "sorted_list_tatas_fine.hpp"
+#else
+	#include "sorted_list.hpp"
+#endif
 
 static const int DATA_VALUE_RANGE_MIN = 0;
 static const int DATA_VALUE_RANGE_MAX = 256;

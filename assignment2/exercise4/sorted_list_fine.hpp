@@ -1,46 +1,24 @@
 #ifndef lacpp_sorted_list_hpp
 #define lacpp_sorted_list_hpp lacpp_sorted_list_hpp
-#include <atomic>
+#include <mutex>
 
 /* a sorted list implementation by David Klaftenegger, 2015
  * please report bugs or suggest improvements to david.klaftenegger@it.uu.se
  */
 
-class ttass_lock{
-	// delcare and init atomic state
-	// locked when true
-	std::atomic<bool> state{false};
-
-	public:
-		void lock(){
-			while(true){
-				while(state.load()){}
-				// return the old value of state
-				if(!state.exchange(true)){
-					return;
-				}
-			}
-		}
-
-		void unlock(){
-			state = false;
-		}
-};
 /* struct for list nodes */
 template<typename T>
 struct node {
 	T value;
 	node<T>* next;
+	std::mutex mutex;
 };
 
 /* non-concurrent sorted singly-linked list */
 template<typename T>
 class sorted_list {
-
+	node<T> ground;	// just a sentinel
 	node<T>* first = nullptr;
-	ttass_lock lock;
-
-	// ttass_lock lock = new ttass_lock();
 
 	public:
 		/* default implementations:
@@ -63,74 +41,88 @@ class sorted_list {
 				remove(first->value);
 			}
 		}
-
-
 		/* insert v into the list */
 		void insert(T v) {
-			lock.lock();
+			node<T>* pred = &ground;
+			// preparing the access to the first node
+			pred->mutex.lock();
+
 			/* first find position */
-			node<T>* pred = nullptr;
 			node<T>* succ = first;
 			while(succ != nullptr && succ->value < v) {
+				succ->mutex.lock();
+				pred->mutex.unlock();
 				pred = succ;
 				succ = succ->next;
 			}
-			
 			/* construct new node */
 			node<T>* current = new node<T>();
 			current->value = v;
 
 			/* insert new node between pred and succ */
 			current->next = succ;
-			if(pred == nullptr) {
+			if(pred == &ground) {
 				first = current;
 			} else {
 				pred->next = current;
 			}
-			lock.unlock();
-		}
+            pred->mutex.unlock();
+        }
 
 		void remove(T v) {
-			lock.lock();
-			/* first find position */
-			node<T>* pred = nullptr;
+			node<T>* pred = &ground;
+			pred->mutex.lock();
+
+            /* first find position */
 			node<T>* current = first;
 			while(current != nullptr && current->value < v) {
+				current->mutex.lock();
+				pred->mutex.unlock();
 				pred = current;
 				current = current->next;
 			}
 			if(current == nullptr || current->value != v) {
-				lock.unlock();
-				/* v not found */
+                pred->mutex.unlock();
+                /* v not found */
 				return;
 			}
 			/* remove current */
-			if(pred == nullptr) {
+            current->mutex.lock();
+			if(pred == &ground) {
 				first = current->next;
 			} else {
 				pred->next = current->next;
 			}
+			pred->mutex.unlock();
+			current->mutex.unlock();
 			delete current;
-			lock.unlock();
-		}
+        }
 
 		/* count elements with value v in the list */
 		std::size_t count(T v) {
 			std::size_t cnt = 0;
-
-			lock.lock();
+			node<T>* past = &ground;
+			ground.mutex.lock();
+			
 			/* first go to value v */
 			node<T>* current = first;
 			while(current != nullptr && current->value < v) {
+				current->mutex.lock();
+				past->mutex.unlock();
+				past = current;
 				current = current->next;
 			}
 			/* count elements */
 			while(current != nullptr && current->value == v) {
 				cnt++;
+
+				current->mutex.lock();
+				past->mutex.unlock();
+				past = current;
 				current = current->next;
 			}
-			lock.unlock();
 
+			past->mutex.unlock();
 			return cnt;
 		}
 };
