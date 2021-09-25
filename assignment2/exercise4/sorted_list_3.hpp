@@ -6,7 +6,26 @@
  * please report bugs or suggest improvements to david.klaftenegger@it.uu.se
  */
 
+class ttass_lock{
+	// delcare and init atomic state
+	// locked when true
+	std::atomic<bool> state{false};
 
+	public:
+		void lock(){
+			while(true){
+				while(state.load()){}
+				// return the old value of state
+				if(!state.exchange(true)){
+					return;
+				}
+			}
+		}
+
+		void unlock(){
+			state = false;
+		}
+};
 /* struct for list nodes */
 template<typename T>
 struct node {
@@ -18,31 +37,10 @@ struct node {
 template<typename T>
 class sorted_list {
 
-	class TATASLock{
-		// delcare and init atomic state
-		std::atomic<bool> state (false);
-
-		public:
-
-			void lock(){
-				bool free = false;
-
-				while(true){
-					while(state.load()){}
-					// try to acquire it
-					if(state.compare_exchange_weak(free, true)){
-						return;
-					}
-				}
-			}
-
-			void unlock(){
-				state = false;
-			}
-	};
-
 	node<T>* first = nullptr;
-	TATASLock lock;
+	ttass_lock lock;
+
+	// ttass_lock lock = new ttass_lock();
 
 	public:
 		/* default implementations:
