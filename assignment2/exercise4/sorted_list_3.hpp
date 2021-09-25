@@ -1,9 +1,11 @@
 #ifndef lacpp_sorted_list_hpp
 #define lacpp_sorted_list_hpp lacpp_sorted_list_hpp
+#include <atomic>
 
 /* a sorted list implementation by David Klaftenegger, 2015
  * please report bugs or suggest improvements to david.klaftenegger@it.uu.se
  */
+
 
 /* struct for list nodes */
 template<typename T>
@@ -15,7 +17,32 @@ struct node {
 /* non-concurrent sorted singly-linked list */
 template<typename T>
 class sorted_list {
+
+	class TATASLock{
+		// delcare and init atomic state
+		std::atomic<bool> state (false);
+
+		public:
+
+			void lock(){
+				bool free = false;
+
+				while(true){
+					while(state.load()){}
+					// try to acquire it
+					if(state.compare_exchange_weak(free, true)){
+						return;
+					}
+				}
+			}
+
+			void unlock(){
+				state = false;
+			}
+	};
+
 	node<T>* first = nullptr;
+	TATASLock lock;
 
 	public:
 		/* default implementations:
@@ -38,8 +65,11 @@ class sorted_list {
 				remove(first->value);
 			}
 		}
+
+
 		/* insert v into the list */
 		void insert(T v) {
+			lock.lock();
 			/* first find position */
 			node<T>* pred = nullptr;
 			node<T>* succ = first;
@@ -59,9 +89,11 @@ class sorted_list {
 			} else {
 				pred->next = current;
 			}
+			lock.unlock();
 		}
 
 		void remove(T v) {
+			lock.lock();
 			/* first find position */
 			node<T>* pred = nullptr;
 			node<T>* current = first;
@@ -70,6 +102,7 @@ class sorted_list {
 				current = current->next;
 			}
 			if(current == nullptr || current->value != v) {
+				lock.unlock();
 				/* v not found */
 				return;
 			}
@@ -80,11 +113,14 @@ class sorted_list {
 				pred->next = current->next;
 			}
 			delete current;
+			lock.unlock();
 		}
 
 		/* count elements with value v in the list */
 		std::size_t count(T v) {
 			std::size_t cnt = 0;
+
+			lock.lock();
 			/* first go to value v */
 			node<T>* current = first;
 			while(current != nullptr && current->value < v) {
@@ -95,6 +131,8 @@ class sorted_list {
 				cnt++;
 				current = current->next;
 			}
+			lock.unlock();
+
 			return cnt;
 		}
 };
