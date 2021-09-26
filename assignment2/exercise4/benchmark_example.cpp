@@ -14,6 +14,8 @@
 	#include "sorted_list_tatas_coarse.hpp"
 #elif defined TATAS_FINE
 	#include "sorted_list_tatas_fine.hpp"
+#elif defined TEST
+	#include "sorted_list_test.hpp" 
 #else
 	#include "sorted_list.hpp"
 #endif

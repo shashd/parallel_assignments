@@ -3,7 +3,7 @@
 #
 
 PROGS=$(PROG4_1) $(PROG4_2) $(PROG4_3) $(PROG4_4)
-PROGS_DEBUG = $(PROG4_1_DEBUG) $(PROG4_2_DEBUG) $(PROG4_3_DEBUG) $(PROG4_4_DEBUG)
+PROGS_DEBUG = $(PROG4_1_DEBUG) $(PROG4_2_DEBUG) $(PROG4_3_DEBUG) $(PROG4_4_DEBUG) $(TEST_DEBUG)
 
 PROG4_1=coarse
 PROG4_1_DEBUG=coarse_debug
@@ -16,6 +16,8 @@ PROG4_3_DEBUG=tatas_coarse_debug
 
 PROG4_4=tatas_fine
 PROG4_4_DEBUG=tatas_fine_debug
+
+TEST_DEBUG=test_debug
 
 all: $(PROGS)
 
@@ -42,6 +44,9 @@ $(PROG4_4): sorted_list_tatas_fine.hpp benchmark_example.cpp benchmark.hpp
 
 $(PROG4_4_DEBUG): sorted_list_tatas_fine.hpp benchmark_example.cpp benchmark.hpp
 	g++ -Wall -std=c++11 -pthread -fsanitize=thread -D TATAS_FINE benchmark_example.cpp -o $(PROG4_4_DEBUG)
+
+$(TEST_DEBUG): sorted_list_test.hpp benchmark_example.cpp benchmark.hpp
+	g++ -Wall -std=c++11 -pthread -fsanitize=thread -D TEST benchmark_example.cpp -o $(TEST_DEBUG)
 
 clean:
 	$(RM) $(PROGS) $(PROGS_DEBUG)
