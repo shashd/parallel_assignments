@@ -1,6 +1,7 @@
 #ifndef lacpp_sorted_list_hpp
 #define lacpp_sorted_list_hpp lacpp_sorted_list_hpp
 #include <thread>
+#include <mutex>
 
 /* a sorted list implementation by David Klaftenegger, 2015
  * please report bugs or suggest improvements to david.klaftenegger@it.uu.se
@@ -9,19 +10,40 @@
 class EX3_Lock{
 	std::thread::id turn;
 	bool busy = false;
+	
+	std::mutex coutLock;
+	int counter = 0;
+
 public:
 	void lock(){
 		std::thread::id me = std::this_thread::get_id();
-
 		do{
 			do{
 				turn = me;
 			}while(busy);
+			busy = true;
 		}while(turn != me);
+
+		coutLock.lock();
+		//std::cout << me << " has entered critical section." << std::endl;
+		++counter;
+		if(counter != 0 && counter != 1){
+			std::cout << counter << std::endl;
+			exit(1);
+		}
+		coutLock.unlock();
 	}
 
 	void unlock(){
 		busy = false;
+		coutLock.lock();
+		//std::cout << std::this_thread::get_id() << " has exited critical section." << std::endl;
+		--counter;
+		if(counter != 0 && counter != 1){
+			std::cout << counter << std::endl;
+			exit(1);
+		}
+		coutLock.unlock();
 	}
 };
 
