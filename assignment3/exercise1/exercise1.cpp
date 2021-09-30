@@ -98,13 +98,13 @@ int main(int argc, char *argv[]) {
     // set the number of threads
     omp_set_num_threads(threads);
     // the number of threads were given
-    int nthrds = omp_get_num_threads();
-    std::cout << "The number of threads = " << nthrds << std::endl;
+    // int nthrds = omp_get_num_threads();
+    std::cout << "The number of threads = " << threads << std::endl;
     #pragma omp parallel shared (chunk_remainder, lower_bound)
     {   
         int cl;
         #pragma omp for
-        for (int i = 0; i < nthrds; i++){
+        for (int i = 0; i < threads; i++){
             int thread_id = omp_get_thread_num();
             std::cout << "ThreadId = " << thread_id << " is running" << std::endl;
             if(chunk_remainder > 0){
