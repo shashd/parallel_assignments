@@ -1,6 +1,6 @@
 # include <iostream>
 # include <omp.h>
-#include <sys/time.h>
+# include <sys/time.h>
 
 void show_help_info(char *program){
     std::cout << "Usage: " << program << " T" << std::endl;
@@ -33,7 +33,7 @@ int main(int argc, char * argv[]){
 
     int threads_number; // the number of threads
     int ** a, ** b, ** c; //arrays
-    int dim = 500; // the length of the array
+    int dim = 1000; // the length of the array
     double time;			//variables for timing
     struct timeval ts,tf;
 
@@ -71,7 +71,6 @@ int main(int argc, char * argv[]){
     free_array(b, dim);
     free_array(c, dim);
     std::cout << "Executed time: " << time << std::endl;
-//#pragma omp for collapse(2)
 
     return 0;
 };
