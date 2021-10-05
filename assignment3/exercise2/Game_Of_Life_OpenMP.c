@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <omp.h>
 
 #define FINALIZE "\
 convert -delay 20 out*.pgm output.gif\n\
@@ -106,7 +107,8 @@ int main (int argc, char * argv[]) {
     omp_set_num_threads(threads_number);
 
     for (t = 0 ; t < T ; t++) {
-        #pragma omp parallel for collapse(2)
+        #pragma omp parallel shared(previous,current) 
+        #pragma omp for collapse(2)
         for (i = 1 ; i < N-1 ; i++)
             for (j = 1 ; j < N-1 ; j++) {
                 nbrs = previous[i+1][j+1] + previous[i+1][j] + previous[i+1][j-1] \
