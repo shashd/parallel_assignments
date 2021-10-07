@@ -99,14 +99,14 @@ int main(int argc, char *argv[]) {
     omp_set_num_threads(threads);
     // the number of threads were given
     // int nthrds = omp_get_num_threads();
-    std::cout << "The number of threads = " << threads << std::endl;
+//    std::cout << "The number of threads = " << threads << std::endl;
     #pragma omp parallel shared (chunk_remainder, lower_bound)
     {   
         int cl;
         #pragma omp for
         for (int i = 0; i < threads; i++){
             int thread_id = omp_get_thread_num();
-            std::cout << "ThreadId = " << thread_id << " is running" << std::endl;
+//            std::cout << "ThreadId = " << thread_id << " is running" << std::endl;
             if(chunk_remainder > 0){
                 cl = chunk_length + 1;
                 --chunk_remainder;
@@ -125,13 +125,13 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> duration = std::chrono::system_clock::now() - start_time;
 
     // output result 
-    std::cout << "Primes: ";
-    for (int i = 0, j = maximum + 1; i < j; i++){
-       if (flags[i]){
-           std::cout << i << " ";
-       }
-    }
-    std::cout << std::endl;
+//    std::cout << "Primes: ";
+//    for (int i = 0, j = maximum + 1; i < j; i++){
+//       if (flags[i]){
+//           std::cout << i << " ";
+//       }
+//    }
+//    std::cout << std::endl;
     
     std::cout << "T= " << threads << ", N= " << maximum << " finished in " << duration.count() << " seconds (wall clock)." << std::endl;
     

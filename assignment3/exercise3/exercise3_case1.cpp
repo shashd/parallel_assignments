@@ -3,7 +3,8 @@
 # include <sys/time.h>
 
 void show_help_info(char *program){
-    std::cout << "Usage: " << program << " T" << std::endl;
+    std::cout << "Usage: " << program << "N T" << std::endl;
+    std::cout << "N: the size of array (int, N > 0)"<< std::endl;
     std::cout << "T: the number of threads (int, T > 0)"<< std::endl;
     exit(-1);
 }
@@ -33,14 +34,15 @@ int main(int argc, char * argv[]){
 
     int threads_number; // the number of threads
     int ** a, ** b, ** c; //arrays
-    int dim = 1000; // the length of the array
+    int dim; // the length of the array
     double time;			//variables for timing
     struct timeval ts,tf;
 
-    if (argc != 2){
+    if (argc != 3){
         show_help_info(argv[0]);
     } else{
-        threads_number = std::stoi(argv[1]);
+        dim = std::stoi(argv[1]);
+        threads_number = std::stoi(argv[2]);
     }
 
     a = allocate_array(dim);
