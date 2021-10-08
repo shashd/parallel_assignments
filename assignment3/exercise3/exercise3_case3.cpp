@@ -1,7 +1,11 @@
 # include <iostream>
 # include <omp.h>
 # include <sys/time.h>
-
+/**
+ * Use the OMP NUM THREADS environment variable to control the number of threads
+ * Example: OMP_NUM_THREADS=2 ./case1.exe N
+ * @param program
+ */
 void show_help_info(char *program){
     std::cout << "Usage: " << program << " T" << std::endl;
     std::cout << "T: the number of threads (int, T > 0)"<< std::endl;
@@ -40,7 +44,7 @@ void print_matrix(int** c, int dim){
 
 int main(int argc, char * argv[]){
 
-    int threads_number; // the number of threads
+    int threads_number = 0; // the number of threads
     int ** a, ** b, ** c; //arrays
     int dim = 40; // the length of the array
     double time;			//variables for timing
@@ -49,7 +53,7 @@ int main(int argc, char * argv[]){
     if (argc != 2){
         show_help_info(argv[0]);
     } else{
-        threads_number = std::stoi(argv[1]);
+        dim = std::stoi(argv[1]);
     }
 
     a = allocate_array(dim);
@@ -78,9 +82,9 @@ int main(int argc, char * argv[]){
     gettimeofday(&tf,NULL);
     time = (tf.tv_sec-ts.tv_sec)+(tf.tv_usec-ts.tv_usec)*0.000001;
     
-    print_matrix(a, dim);
-    print_matrix(b, dim);
-    print_matrix(c, dim);
+//    print_matrix(a, dim);
+//    print_matrix(b, dim);
+//    print_matrix(c, dim);
     
     free_array(a, dim);
     free_array(b, dim);
