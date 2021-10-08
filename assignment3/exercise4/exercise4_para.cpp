@@ -19,11 +19,10 @@ void row_oriented(int n, int **A, int *x, int *b){
     }
 }
 
-void column_oriented(int n, int **A, int *x, int *b){
-
-    #pragma omp parallel private(col)
+void column_oriented(int n, int **A, int *x, int *b, int nthreads){
+    #pragma omp parallel num_threads(nthreads)
     {
-        #pragma omp for
+        #pragma omp for 
         for (int row = 0; row < n; row++){
             x[row] = b[row];
         }
@@ -32,7 +31,7 @@ void column_oriented(int n, int **A, int *x, int *b){
             #pragma omp single
             x[col] /= A[col][col];
             //implicit barrier
-            #pragma omp for
+            #pragma omp for schedule(runtime)
             for (int row = 0; row < col; row++){
                 x[row] -= A[row][col] * x[col];
             }
@@ -98,6 +97,8 @@ int main(int argc, char * argv[]) {
         threads_number = std::stoi(argv[2]);
     }
 
+    omp_set_dynamic(0);
+
     int *b = init_B(n);; // the equation value array
     int ** A = init_A(n); // the coefficients array of x
     int *x = new int[n]; // the solution array
@@ -105,7 +106,7 @@ int main(int argc, char * argv[]) {
     // compute the solution
     auto start_time = std::chrono::system_clock::now();
     //row_oriented(n,A,x,b);
-    column_oriented(n,A,x,b);
+    column_oriented(n,A,x,b,threads_number);
     std::chrono::duration<double> duration = std::chrono::system_clock::now() - start_time;
 
     // show answer
