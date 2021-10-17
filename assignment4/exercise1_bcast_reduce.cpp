@@ -10,7 +10,7 @@
 int rank, pop;
 int maximum, minimum, total;
 int sqrt_max;
-char *sieve;
+int *sieve;
 
 void show_help_info(char *program){
     std::cout << "Usage: " << program << "N" << std::endl;
@@ -60,6 +60,15 @@ int set_bounds(int rank, int &lower, int &upper){
     return upper - lower + 1;
 }
 
+void summary(double elapsed, int primes[]){
+    std::cout << "Primes: ";
+    for(int i = 0; i <= maximum; ++i)
+        if(primes[i])
+            std::cout << i << " ";
+    std::cout << std::endl;
+    std::cout << "Elapsed time: " << elapsed << std::endl;
+}
+
 int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -82,11 +91,9 @@ int main(int argc, char *argv[]) {
 
     sqrt_max = (int)sqrt(maximum);
     // init sieve array
-    sieve = new char[maximum + 1];
-    memset(sieve, TRUE, sizeof(char) * (maximum + 1));
+    sieve = new int[maximum + 1];
+    memset(sieve, TRUE, sizeof(int) * (maximum + 1));
     sieve[0] = sieve[1] = FALSE;
-
-    double t1 = MPI_Wtime();
 
     /*  compute primes up to sqrt_max in all processes, could also compute in
         only one process and send the result to others */
@@ -98,36 +105,34 @@ int main(int argc, char *argv[]) {
     clen = set_bounds(rank, lower, upper);
 
     if (rank == 0){
+        //start timing
+        double t1 = MPI_Wtime();
+
         // execute serial part and bcast to other processors
         eratosthenes(2, sqrt_max);
 
         // send the sieve array
-        MPI_Bcast(&sieve, sqrt_max+1, MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(sieve, sqrt_max+1, MPI_INT, 0, MPI_COMM_WORLD);
 
-        eratosthenes_par(lower, upper, sieve);
-        
+        eratosthenes_par(lower, upper);
+
+        int* primes = new int[maximum + 1];
         // reduces data
-        MPI_Reduce(sieve, sieve, maximum + 1, MPI_BYTE, MPI_LAND, 0, MPI_COMM_WORLD);
+        MPI_Reduce(sieve, primes, maximum + 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
 
+        //finish timing
+        double t2 = MPI_Wtime();
+
+        summary(t2-t1, primes);
+        delete[] primes;
     } else{
         // receive the sieve array
-        MPI_Bcast(&sieve, sqrt_max+1, MPI_BYTE, 0, MPI_COMM_WORLD);
-        eratosthenes_par(lower, upper, sieve);
+        MPI_Bcast(sieve, sqrt_max+1, MPI_INT, 0, MPI_COMM_WORLD);
+        eratosthenes_par(lower, upper);
         
         // reduce data
-        MPI_Reduce(sieve, sieve, maximum + 1, MPI_BYTE, MPI_LAND, 0, MPI_COMM_WORLD);
+        MPI_Reduce(sieve, NULL, maximum + 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
     }
-    
-
-    double t2 = MPI_Wtime();
-
-    std::cout << "\n\nPrimes: ";
-    for(int i = 0; i <= sqrt_max; ++i)
-        if(sieve[i])
-            std::cout << i << " ";
-    std::cout << std::endl;
-    std::cout << "Elapsed time: " << t2 - t1 << std::endl;
-    
     delete[] sieve;
     MPI_Finalize();
     return 0;
