@@ -7,8 +7,10 @@
 #define FALSE 0
 #define TRUE 1
 
+int rank, pop;
+int maximum, minimum, total;
+int sqrt_max;
 char *sieve;
-int maximum, minimum, total, chunk;
 
 void show_help_info(char *program){
     std::cout << "Usage: " << program << "T N" << std::endl;
@@ -30,7 +32,7 @@ void eratosthenes(int lowerbound, int upperbound) {
     }
 }
 
-void eratosthenes_par(int lowerbound, int upperbound, int sqrt_max, char flags[]){
+void eratosthenes_par(int lowerbound, int upperbound, char flags[]){
     // j is the loop index for flags[]
     for(int i = lowerbound, j = 0; i <= upperbound; ++i, ++j){
         for(int q = 2; q <= sqrt_max; ++q){
@@ -42,7 +44,11 @@ void eratosthenes_par(int lowerbound, int upperbound, int sqrt_max, char flags[]
     }
 }
 
-int set_bounds(int rank, int remainder, int &lower, int &upper){
+int set_bounds(int rank, int &lower, int &upper){
+    // static variables will be initialized once and stay in the memory
+    static int chunk = total / pop;
+    static int remainder = total - chunk * pop;
+
     lower = minimum + rank * chunk;
     upper = lower + chunk - 1;
     if (rank < remainder){
@@ -56,7 +62,6 @@ int set_bounds(int rank, int remainder, int &lower, int &upper){
 }
 
 int main(int argc, char *argv[]) {
-    int rank, pop;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &pop);
@@ -78,10 +83,12 @@ int main(int argc, char *argv[]) {
         show_help_info(argv[0]);
     }
 
-    int sqrt_max = (int)sqrt(maximum);
+    sqrt_max = (int)sqrt(maximum);
     sieve = new char[sqrt_max + 1];
     memset(sieve, TRUE, sizeof(char) * (sqrt_max + 1));
     sieve[0] = sieve[1] = FALSE;
+
+    double t1 = MPI_Wtime();
 
     /*  compute primes up to sqrt_max in all processes, could also compute in
         only one process and send the result to others */
@@ -89,17 +96,15 @@ int main(int argc, char *argv[]) {
     
     minimum = sqrt_max + 1;
     total = maximum - minimum + 1;
-    chunk = total / pop;
-    int remainder = total - chunk * pop;
 
     int lower, upper, clen;
-    clen = set_bounds(rank, remainder, lower, upper);
+    clen = set_bounds(rank, lower, upper);
 
     if(rank != 0){
         if(lower <= upper){
             char* flags = new char[clen];
             memset(flags, TRUE, sizeof(char) * clen);
-            eratosthenes_par(lower, upper, sqrt_max, flags);
+            eratosthenes_par(lower, upper, flags);
             MPI_Send(flags, clen, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
 
             //std::cout << "Send " << lower << " " << upper <<"\n";
@@ -107,16 +112,18 @@ int main(int argc, char *argv[]) {
         }
     }else{
         char* flags = new char[total];
-        memset(flags, TRUE, sizeof(char) * total);
-        eratosthenes_par(lower, upper, sqrt_max, flags);
+        memset(flags, TRUE, sizeof(char) * clen);
+        eratosthenes_par(lower, upper, flags);
 
         for(int rank = 1, offset=clen; rank < pop; ++rank){
-            clen = set_bounds(rank, remainder, lower, upper);
+            clen = set_bounds(rank, lower, upper);
             if(lower <= upper){
                 MPI_Recv(flags + offset, clen, MPI_BYTE, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 offset += clen;
             }
         }
+
+        double t2 = MPI_Wtime();
 
         std::cout << "\n\nPrimes: ";
         for(int i = 0; i <= sqrt_max; ++i)
@@ -126,6 +133,7 @@ int main(int argc, char *argv[]) {
             if (flags[i])
                 std::cout << i + sqrt_max + 1 << " ";  
         std::cout << std::endl;
+        std::cout << "Elapsed time: " << t2 - t1 << std::endl;
         delete []flags;
     }
 
