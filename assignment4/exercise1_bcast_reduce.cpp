@@ -104,15 +104,15 @@ int main(int argc, char *argv[]) {
         // send the sieve array
         MPI_Bcast(&sieve, sqrt_max+1, MPI_BYTE, 0, MPI_COMM_WORLD);
 
-        eratosthenes_par(lower, upper, sieve);
+        eratosthenes_par(lower, upper);
         
         // reduces data
-        MPI_Reduce(sieve, sieve, maximum + 1, MPI_BYTE, MPI_LAND, 0, MPI_COMM_WORLD);
+        MPI_Reduce(MPI_IN_PLACE, sieve, maximum + 1, MPI_BYTE, MPI_LAND, 0, MPI_COMM_WORLD);
 
     } else{
         // receive the sieve array
         MPI_Bcast(&sieve, sqrt_max+1, MPI_BYTE, 0, MPI_COMM_WORLD);
-        eratosthenes_par(lower, upper, sieve);
+        eratosthenes_par(lower, upper);
         
         // reduce data
         MPI_Reduce(sieve, sieve, maximum + 1, MPI_BYTE, MPI_LAND, 0, MPI_COMM_WORLD);
@@ -121,11 +121,11 @@ int main(int argc, char *argv[]) {
 
     double t2 = MPI_Wtime();
 
-    std::cout << "\n\nPrimes: ";
-    for(int i = 0; i <= sqrt_max; ++i)
-        if(sieve[i])
-            std::cout << i << " ";
-    std::cout << std::endl;
+    // std::cout << "\n\nPrimes: ";
+    // for(int i = 0; i <= maximum; ++i)
+    //     if(sieve[i])
+    //         std::cout << i << " ";
+    // std::cout << std::endl;
     std::cout << "Elapsed time: " << t2 - t1 << std::endl;
     
     delete[] sieve;
